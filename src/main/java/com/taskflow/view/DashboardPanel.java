@@ -23,9 +23,10 @@ public class DashboardPanel extends JPanel {
     private ProjectDAO projectDAO;
     private IssueDAO issueDAO;
     private UserDAO userDAO;
+
+	private DefaultTableModel tableModel;
     
     private static final Color PRIMARY_COLOR = new Color(37, 99, 235);
-    private static final Color SECONDARY_COLOR = new Color(59, 130, 246);
     private static final Color SUCCESS_COLOR = new Color(34, 197, 94);
     private static final Color WARNING_COLOR = new Color(234, 179, 8);
     private static final Color ERROR_COLOR = new Color(239, 68, 68);
@@ -207,7 +208,7 @@ public class DashboardPanel extends JPanel {
         headerPanel.add(viewAllButton, BorderLayout.EAST);
         
         String[] columns = {"Task", "Priority", "Status", "Due Date"};
-        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+        this.tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -400,8 +401,65 @@ public class DashboardPanel extends JPanel {
     }
     
     private void loadTasksData() {
-        // TODO: Load actual data from database
-        // For now using dummy data
+        List<Issue> tasks = new java.util.ArrayList<>();
+        
+        try {
+            switch (currentUser.getRole()) {
+                case ADMIN:
+                    tasks = issueDAO.findAll(); 
+                    break;
+                    
+                case PROJECT_MANAGER:
+                    List<Project> pmProjects = projectDAO.findByProjectManagerId(currentUser.getUserId());
+                    if (pmProjects != null && !pmProjects.isEmpty()) {
+                        for (Project project : pmProjects) {
+                            List<Issue> projectIssues = issueDAO.findByProjectId(project.getProjectId());
+                            if (projectIssues != null) {
+                                tasks.addAll(projectIssues);
+                            }
+                        }
+                    }
+                    break;
+                    
+                case TEAM_MEMBER:
+                    tasks = issueDAO.findByAssigneeId(currentUser.getUserId());
+                    break;
+                    
+                case REPORTER:
+                    tasks = issueDAO.findByReporterId(currentUser.getUserId());
+                    break;
+            }
+            
+            // Update UI harus dilakukan di Event Dispatch Thread
+            final List<Issue> finalTasks = tasks;
+            SwingUtilities.invokeLater(() -> updateTaskTable(finalTasks));
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Error loading tasks: " + e.getMessage());
+        }
+    }
+
+	private void updateTaskTable(List<Issue> tasks) {
+        if (tableModel == null) return;
+        
+        tableModel.setRowCount(0);
+        
+        java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("dd MMM yyyy");
+        
+        for (Issue issue : tasks) {
+            String title = issue.getTitle();
+            
+            String priority = issue.getPriority() != null ? issue.getPriority().name() : "-";
+            String status = issue.getStatus() != null ? issue.getStatus().name().replace("_", " ") : "-";
+            
+            String dueDateStr = "-";
+            if (issue.getDueDate() != null) {
+                dueDateStr = issue.getDueDate().format(formatter);
+            }
+            
+            tableModel.addRow(new Object[]{title, priority, status, dueDateStr});
+        }
     }
     
     private void updateStatCard(int index, String value) {

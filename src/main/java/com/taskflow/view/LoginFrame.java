@@ -1,7 +1,6 @@
 package com.taskflow.view;
 
 import com.taskflow.controller.LoginController;
-import com.taskflow.entity.User;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -350,9 +349,7 @@ public class LoginFrame extends JFrame {
 			protected void done() {
 				try {
 					boolean success = get();
-					if (success) {
-						User user = loginController.getCurrentUser();
-						
+					if (success) {						
 						SwingUtilities.invokeLater(() -> {
 							dispose();
 							new MainFrame().setVisible(true); 
