@@ -15,17 +15,32 @@ public class UserDAO extends BaseDAO<User, Integer> {
     }
     
     public Optional<User> findByUsername(String username) {
-        try (Session session = sessionFactory.openSession()) {
-            Query<User> query = session.createQuery(
-                "FROM User u WHERE u.username = :username", 
-                User.class
-            );
-            query.setParameter("username", username);
-            return Optional.ofNullable(query.uniqueResult());
-        } catch (Exception e) {
-            throw new RuntimeException("Error finding user by username: " + e.getMessage(), e);
-        }
-    }
+		Session session = null;
+		try {
+			session = sessionFactory.openSession();
+			Query<User> query = session.createQuery(
+				"FROM User u WHERE u.username = :username", 
+				User.class
+			);
+			query.setParameter("username", username);
+			User user = query.uniqueResult();
+			
+			// Paksa load lazy properties kalau ada
+			if (user != null) {
+				org.hibernate.Hibernate.initialize(user);
+			}
+			
+			return Optional.ofNullable(user);
+		} catch (Exception e) {
+			System.err.println("❌ Error finding user by username: " + e.getMessage());
+			e.printStackTrace();
+			throw new RuntimeException("Error finding user by username: " + e.getMessage(), e);
+		} finally {
+			if (session != null) {
+				session.close();
+			}
+		}
+	}
     
     public Optional<User> findByEmail(String email) {
         try (Session session = sessionFactory.openSession()) {

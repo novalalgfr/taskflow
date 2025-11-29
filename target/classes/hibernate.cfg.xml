@@ -29,7 +29,12 @@
         <!-- Disable second-level cache (untuk simplicity) -->
         <property name="hibernate.cache.use_second_level_cache">false</property>
         
-        <!-- Mapping classes akan ditambahkan nanti -->
-        <!-- <mapping class="com.taskflow.entity.User"/> -->
+        <!-- ✅ UNCOMMENT INI! -->
+        <mapping class="com.taskflow.entity.User"/>
+        
+        <!-- Tambahkan entity lain kalau sudah ada -->
+        <!-- <mapping class="com.taskflow.entity.Project"/> -->
+        <!-- <mapping class="com.taskflow.entity.Task"/> -->
+        <!-- <mapping class="com.taskflow.entity.Team"/> -->
     </session-factory>
 </hibernate-configuration>
